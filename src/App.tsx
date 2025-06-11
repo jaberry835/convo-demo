@@ -1,24 +1,26 @@
 import React from 'react';
-import logo from './logo.svg';
+import { Allotment } from 'allotment';
+import ConversationPanel from './components/ConversationPanel';
+import CopilotPanel from './components/CopilotPanel';
+import 'allotment/dist/style.css';
 import './App.css';
 
 function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        <h1>Azure AI Negotiation Assistant Demo</h1>
       </header>
+      <div className="App-content">
+        <Allotment defaultSizes={[60, 40]}>
+          <Allotment.Pane minSize={300}>
+            <ConversationPanel />
+          </Allotment.Pane>
+          <Allotment.Pane minSize={250}>
+            <CopilotPanel />
+          </Allotment.Pane>
+        </Allotment>
+      </div>
     </div>
   );
 }
