@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import OpenAI from 'openai';``
 import { SearchClient, AzureKeyCredential } from '@azure/search-documents';
 
 // Load configuration from environment variables (set in .env)
