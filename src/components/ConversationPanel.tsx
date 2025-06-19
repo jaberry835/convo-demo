@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import MessageComponent from './MessageComponent';
 import MessageInput from './MessageInput';
 import './ConversationPanel.css';
@@ -12,6 +12,15 @@ interface ConversationPanelProps {
 }
 
 const ConversationPanel: React.FC<ConversationPanelProps> = ({ messages, isBotTyping, onSendMessage, started }) => {
+  // Ref for messages container to enable auto-scrolling
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to bottom whenever messages change
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTo({ top: containerRef.current.scrollHeight, behavior: 'smooth' });
+    }
+  }, [messages]);
   const currentStage = messages.length > 0 ? messages[messages.length - 1].negotiation_stage : '';
   return (
     <div className="conversation-panel">
@@ -26,7 +35,7 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({ messages, isBotTy
         </div>
       )}
 
-      <div className="messages-container">
+      <div className="messages-container" ref={containerRef}>
         {isBotTyping && <div className="bot-typing-indicator">SilverHawk is typing...</div>}
         {messages.map((m, i) => <MessageComponent key={i} message={m} />)}
       </div>

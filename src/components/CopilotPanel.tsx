@@ -30,7 +30,9 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
   // Detect crypto amounts and estimate USD
   const conversion = useMemo(() => {
     const regex = /([0-9]+(?:\.[0-9]+)?)\s*(BTC|ETH)/i;
-    for (const msg of messages) {
+    // Find the latest crypto mention by scanning messages in reverse
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
       const match = msg.message.match(regex);
       if (match) {
         const amount = parseFloat(match[1]);
