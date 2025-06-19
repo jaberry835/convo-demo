@@ -237,3 +237,14 @@
 .section-refresh-btn:hover {
   color: #333;
 }
+
+/* Error banner for pattern analysis failures */
+.pattern-error {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 12px 20px;
+  margin: 0;
+  border-bottom: 1px solid #f5c6cb;
+  font-size: 0.9rem;
+  text-align: center;
+}

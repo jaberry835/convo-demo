@@ -9,9 +9,11 @@ interface ConversationPanelProps {
   isBotTyping: boolean;
   onSendMessage: (messageText: string) => Promise<void>;
   started: boolean;
+  draftMessage: string;              // Current draft message from Copilot selection or user input
+  setDraftMessage: React.Dispatch<React.SetStateAction<string>>;
 }
 
-const ConversationPanel: React.FC<ConversationPanelProps> = ({ messages, isBotTyping, onSendMessage, started }) => {
+const ConversationPanel: React.FC<ConversationPanelProps> = ({ messages, isBotTyping, onSendMessage, started, draftMessage, setDraftMessage }) => {
   // Ref for messages container to enable auto-scrolling
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -40,7 +42,12 @@ const ConversationPanel: React.FC<ConversationPanelProps> = ({ messages, isBotTy
         {messages.map((m, i) => <MessageComponent key={i} message={m} />)}
       </div>
 
-      <MessageInput onSendMessage={onSendMessage} disabled={!started} />
+      <MessageInput
+        onSendMessage={onSendMessage}
+        disabled={!started}
+        value={draftMessage}
+        onChangeValue={setDraftMessage}
+      />
     </div>
   );
 };

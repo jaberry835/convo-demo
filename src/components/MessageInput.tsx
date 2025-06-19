@@ -4,11 +4,16 @@ import './MessageInput.css';
 interface MessageInputProps {
   onSendMessage: (message: string) => void;
   disabled?: boolean;
+  value?: string;
+  onChangeValue?: (value: string) => void;
 }
 
-const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, disabled = false }) => {
-  const [message, setMessage] = useState('');
+const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, disabled = false, value, onChangeValue }) => {
+  const [localMessage, setLocalMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+
+  const message = typeof value === 'string' ? value : localMessage;
+  const setMessage = onChangeValue ?? setLocalMessage;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,7 +21,7 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, disabled = f
       setIsTyping(true);
       onSendMessage(message.trim());
       setMessage('');
-      
+
       // Simulate typing delay
       setTimeout(() => {
         setIsTyping(false);
@@ -44,8 +49,8 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, disabled = f
             rows={3}
             disabled={isTyping || disabled}
           />
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="send-button"
             disabled={!message.trim() || isTyping || disabled}
           >
@@ -63,7 +68,7 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, disabled = f
           </button>
         </div>
       </form>
-      
+
       <div className="input-hints">
         <div className="security-status">
           <span className="security-icon">🔐</span>

@@ -218,6 +218,20 @@
   background-color: #e9ecef;
 }
 
+/* Action link button to prefill chat input */
+.action-link {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  margin-left: 8px;
+  cursor: pointer;
+  color: #6f42c1;
+  transition: color 0.2s ease;
+}
+.action-link:hover {
+  color: #5a2d91;
+}
+
 /* Type-specific styling */
 .suggestion-card.pattern_analysis .suggestion-header {
   border-left: 4px solid #007bff;

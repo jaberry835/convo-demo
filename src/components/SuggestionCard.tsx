@@ -6,9 +6,10 @@ interface SuggestionCardProps {
   suggestion: Suggestion;
   onRefresh?: () => void;
   isRefreshing?: boolean;
+  onSelectAction?: (text: string) => void; // Callback to prefill input
 }
 
-const SuggestionCard: React.FC<SuggestionCardProps> = ({ suggestion, onRefresh, isRefreshing = false }) => {
+const SuggestionCard: React.FC<SuggestionCardProps> = ({ suggestion, onRefresh, isRefreshing = false, onSelectAction }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const getTypeIcon = (type: string) => {
@@ -19,16 +20,6 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({ suggestion, onRefresh, 
       'next_move': '🎯'
     };
     return icons[type] || '📋';
-  };
-
-  const getTypeColor = (type: string) => {
-    const colors: { [key: string]: string } = {
-      'pattern_analysis': '#007bff',
-      'negotiation_tactic': '#28a745',
-      'risk_assessment': '#dc3545',
-      'next_move': '#6f42c1'
-    };
-    return colors[type] || '#6c757d';
   };
 
   const getConfidenceLevel = (confidence: number) => {
@@ -46,6 +37,8 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({ suggestion, onRefresh, 
           <h3>{suggestion.title}</h3>
         </div>
         <div className="suggestion-controls">
+          {/* Rank badge */}
+          <div className="rank-badge">#{suggestion.rank}</div>
           <div className={`confidence-badge ${getConfidenceLevel(suggestion.confidence)}`}>
             {Math.round(suggestion.confidence * 100)}% confidence
           </div>
@@ -67,10 +60,14 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({ suggestion, onRefresh, 
 
       {isExpanded && (
         <div className="suggestion-body">
+          {/* Next logical response area */}
+          <div className="next-response-area">
+            <strong>Next focus:</strong> {suggestion.next_response_area}
+          </div>
           <div className="suggestion-content">
             <p>{suggestion.content}</p>
           </div>
-          
+
           {suggestion.action_items.length > 0 && (
             <div className="action-items">
               <h4>Recommended Actions:</h4>
@@ -78,13 +75,22 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({ suggestion, onRefresh, 
                 {suggestion.action_items.map((item, index) => (
                   <li key={index}>
                     <span className="action-bullet">→</span>
-                    {item}
+                    <span className="action-text">{item}</span>
+                    {onSelectAction && (
+                      <button
+                        className="action-link"
+                        onClick={(e) => { e.stopPropagation(); onSelectAction(item); }}
+                        title="Use this action"
+                      >
+                        💬➔
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
             </div>
           )}
-          
+
           <div className="suggestion-footer">
             <div className="suggestion-actions">
               <button className="action-btn primary">Apply Suggestion</button>

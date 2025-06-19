@@ -37,7 +37,9 @@ export interface Suggestion {
   type: "pattern_analysis" | "negotiation_tactic" | "risk_assessment" | "next_move";
   title: string;
   content: string;
-  confidence: number;
+  confidence: number; // Confidence score from 0.0 to 1.0
+  rank: number;       // Suggestion rank, 1 = highest priority
+  next_response_area: string; // Logical next area the buyer should address
   action_items: string[];
 }
 

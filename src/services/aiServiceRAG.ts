@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { SearchClient, AzureKeyCredential } from '@azure/search-documents';
-import { Message } from '../types/conversation';
+import { Message, Suggestion } from '../types/conversation';
 
 // Load configuration from environment variables (set in .env)
 const openaiEndpoint = process.env.REACT_APP_OPENAI_ENDPOINT!;
@@ -159,5 +159,72 @@ export async function getBuyerInitialMessage(
   } catch (err) {
     console.error('Error generating buyer initial message:', err);
     return `Hi, I'm interested in ${product}. Can you share more details?`;
+  }
+}
+
+/**
+ * Generate pattern analysis suggestions based on the current conversation history.
+ * Uses Azure Cognitive Search for context, then OpenAI to craft suggestions.
+ */
+export async function getPatternAnalysisSuggestions(
+  conversation: Message[]
+): Promise<Suggestion[]> {
+  try {
+    // Retrieve relevant context from Azure Search using last user message
+    const lastMessage = conversation.length > 0 ? conversation[conversation.length - 1].message : '';
+    const contexts = await retrieveContext(lastMessage);
+
+    // Build chat messages for pattern analysis
+    const messagesPayload: any[] = [
+      {
+        role: 'system',
+        content: `You are a buyer-focused AI assistant helping the buyer secure the best possible deal and ensure they receive exactly what they expect. ` +
+          `Analyze negotiation patterns from the conversation and similar past examples, and provide 3 creative, actionable suggestions tailored to the buyer’s interests. ` +
+          `Output a JSON array where each item includes the following fields: ` +
+          `id (unique string), type ('pattern_analysis'), title, content, confidence (0.0 to 1.0), rank (1 = highest priority), next_response_area (the next logical area the buyer should address), and action_items (array of prompt suggestions the buyer can copy to continue the conversation).` +
+          `
+Contexts:
+${contexts.join('\n\n')}`
+      },
+      {
+        role: 'user',
+        content: `Conversation History:
+${conversation.map(m => `${m.role}: ${m.message}`).join('\n')}`
+      }
+    ];
+
+    // @ts-ignore bypass type mismatch
+    const result = await openaiClient.chat.completions.create({
+      model: openaiDeployment,
+      messages: messagesPayload,
+      temperature: 0.7,
+      max_tokens: 800
+    });
+    const text = result.choices[0].message?.content || '[]';
+    
+    let suggestions: Suggestion[];
+    try {
+      suggestions = JSON.parse(text);
+    } catch (parseErr) {
+      console.error('Failed to parse suggestions JSON, attempting fallback parse:', parseErr, text);
+      // Attempt to extract JSON array substring
+      const start = text.indexOf('[');
+      const end = text.lastIndexOf(']');
+      if (start !== -1 && end !== -1 && end > start) {
+        const snippet = text.substring(start, end + 1);
+        try {
+          suggestions = JSON.parse(snippet);
+        } catch (innerErr) {
+          console.error('Fallback JSON parse failed:', innerErr);
+          suggestions = [];
+        }
+      } else {
+        suggestions = [];
+      }
+    }
+    return suggestions;
+  } catch (err) {
+    console.error('Error generating pattern analysis suggestions:', err);
+    return [];
   }
 }

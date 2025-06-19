@@ -1,23 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Suggestion, Message } from '../types/conversation';
+import { getPatternAnalysisSuggestions } from '../services/aiServiceRAG';
 import SuggestionCard from './SuggestionCard';
 import './CopilotPanel.css';
-
-// Static sample data for all sections
-const sampleSuggestions: Suggestion[] = [
-  { id: '1', type: 'pattern_analysis', title: 'Similar Conversation Pattern Detected', content: '', confidence: 0.85,
-    action_items: ['Ask for product certification details', 'Request third-party quality verification','Inquire about bulk pricing options']
-  },
-  { id: '2', type: 'negotiation_tactic', title: 'Leverage Escrow Service Discussion', content: 'The seller mentioned ES-001 escrow; use this to negotiate fees.', confidence: 0.72,
-    action_items: ['Research ES-001 fee structure', 'Propose alternative escrow services', 'Negotiate who pays escrow fees']
-  },
-  { id: '3', type: 'risk_assessment', title: 'Communication Security Analysis', content: 'Secure channel detected; leverage this to ask for volume discounts.', confidence: 0.91,
-    action_items: ['Maintain professional security language', 'Use leverage for bulk discounts','Position as long-term client']
-  },
-  { id: '4', type: 'next_move', title: 'Recommended Next Response', content: 'Acknowledge quality standards, then ask about volume tiers.', confidence: 0.88,
-    action_items: ['Acknowledge quality standards', 'Ask about volume pricing tiers','Request sample for verification']
-  }
-];
 
 interface CopilotPanelProps {
   buyerOptions: string[];
@@ -28,6 +13,7 @@ interface CopilotPanelProps {
   initiateConversation: () => Promise<void>;
   started: boolean;
   messages: Message[];
+  setDraftMessage: React.Dispatch<React.SetStateAction<string>>; // New prop for prefilling input
 }
 
 const CopilotPanel: React.FC<CopilotPanelProps> = ({
@@ -39,10 +25,12 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
   initiateConversation,
   started,
   messages
+  , setDraftMessage
 }) => {
-  const [suggestions, setSuggestions] = useState<Suggestion[]>(sampleSuggestions);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [refreshingIds, setRefreshingIds] = useState<Record<string, boolean>>({});
+  // Pattern analysis suggestions and loading state
+  const [patternSuggestions, setPatternSuggestions] = useState<Suggestion[]>([]);
+  const [patternLoading, setPatternLoading] = useState(false);
+  const [patternError, setPatternError] = useState<string>('');
 
   // Detect crypto amounts and estimate USD
   const conversion = useMemo(() => {
@@ -62,26 +50,18 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
     return '';
   }, [messages]);
 
-  useEffect(() => {
-    // Simulate AI analysis loading
-    setIsAnalyzing(true);
-    const timer = setTimeout(() => {
-      setSuggestions(sampleSuggestions);
-      setIsAnalyzing(false);
-    }, 1500);
-
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Refresh all suggestions
-  const handleRefreshSuggestions = () => {
-    setIsAnalyzing(true);
-    setSuggestions([]);
-    setTimeout(() => {
-      setSuggestions(sampleSuggestions);
-      setIsAnalyzing(false);
-    }, 2000);
+  // Refresh only pattern analysis section
+  const handleRefreshPattern = () => {
+    setPatternError('');
+    setPatternLoading(true);
+    getPatternAnalysisSuggestions(messages)
+      .then(s => setPatternSuggestions(s))
+      .catch((err) => {
+        console.error('Pattern analysis fetch error:', err);
+        setPatternSuggestions([]);
+        setPatternError(err?.message || 'Error fetching pattern analysis.');
+      })
+      .finally(() => setPatternLoading(false));
   };
 
   return (
@@ -90,12 +70,18 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
         <h2>AI Negotiation Assistant</h2>
         <button 
           className="refresh-btn"
-          onClick={handleRefreshSuggestions}
-          disabled={isAnalyzing}
+          onClick={handleRefreshPattern}
+          disabled={!started || patternLoading}
         >
-          {isAnalyzing ? 'Analyzing...' : 'Refresh All Analysis'}
+          {patternLoading ? 'Analyzing Patterns...' : 'Refresh Patterns'}
         </button>
       </div>
+
+      {patternError && (
+        <div className="pattern-error">
+          {patternError}
+        </div>
+      )}
 
       {conversion && (
         <div className="conversion-display">
@@ -137,31 +123,33 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
         <>
           <div className="analysis-status">
             <div className="status-indicator">
-              <span className={`status-dot ${isAnalyzing ? 'analyzing' : 'ready'}`}></span>
-              {isAnalyzing ? 'Analyzing conversation patterns...' : 'Analysis complete'}
+              <span className={`status-dot ${patternLoading ? 'analyzing' : 'ready'}`}></span>
+              {patternLoading ? 'Analyzing patterns...' : 'Pattern analysis complete'}
             </div>
           </div>
 
           <div className="suggestions-container">
-            {isAnalyzing ? (
-              <div className="loading-placeholder">
-                <div className="loading-spinner"></div>
-                <p>Analyzing conversation using Azure AI Search and OpenAI...</p>
-              </div>
+            {patternLoading ? (
+               <div className="loading-placeholder">
+                 <div className="loading-spinner"></div>
+                <p>Generating pattern analysis via RAG + OpenAI...</p>
+               </div>
             ) : (
-              suggestions.map(suggestion => (
-                <SuggestionCard
-                  key={suggestion.id}
-                  suggestion={suggestion}
-                  isRefreshing={!!refreshingIds[suggestion.id]}
-                  onRefresh={() => {
-                    setRefreshingIds(prev => ({ ...prev, [suggestion.id]: true }));
-                    setTimeout(() => {
-                      setRefreshingIds(prev => ({ ...prev, [suggestion.id]: false }));
-                    }, 1000);
-                  }}
-                />
-              ))
+              patternSuggestions.length > 0 ? (
+                patternSuggestions.map(suggestion => (
+                  <SuggestionCard
+                    key={suggestion.id}
+                    suggestion={suggestion}
+                    onRefresh={handleRefreshPattern}
+                    isRefreshing={patternLoading}
+                    onSelectAction={text => setDraftMessage(text)}
+                  />
+                ))
+              ) : (
+                <div className="placeholder">
+                  Click 'Refresh Patterns' to generate AI-powered negotiation suggestions for the buyer.
+                </div>
+              )
             )}
           </div>
         </>

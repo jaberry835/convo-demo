@@ -15,6 +15,8 @@ function App() {
   const [selectedBuyer, setSelectedBuyer] = useState(buyerOptions[0]);
   const [productDesc, setProductDesc] = useState('');
   const [started, setStarted] = useState(false);
+  // Draft message state lifted for action insertion
+  const [draftMessage, setDraftMessage] = useState('');
 
   const initiateConversation = async () => {
     if (!productDesc.trim()) return;
@@ -75,6 +77,8 @@ function App() {
     setMessages(prev => [...prev, newMessage]);
     setIsBotTyping(true);
 
+    // Clear draft message after send
+    setDraftMessage('');
     try {
       // Pass full conversation history including the new buyer message
       const history = [...messages, newMessage];
@@ -111,6 +115,8 @@ function App() {
               isBotTyping={isBotTyping}
               onSendMessage={handleSendMessage}
               started={started}
+              draftMessage={draftMessage}
+              setDraftMessage={setDraftMessage}
             />
           </Allotment.Pane>
           <Allotment.Pane minSize={250}>
@@ -123,6 +129,7 @@ function App() {
               initiateConversation={initiateConversation}
               started={started}
               messages={messages}
+              setDraftMessage={setDraftMessage}
             />
           </Allotment.Pane>
         </Allotment>
