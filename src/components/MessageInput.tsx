@@ -3,9 +3,10 @@ import './MessageInput.css';
 
 interface MessageInputProps {
   onSendMessage: (message: string) => void;
+  disabled?: boolean;
 }
 
-const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage }) => {
+const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, disabled = false }) => {
   const [message, setMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
 
@@ -41,12 +42,12 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage }) => {
             placeholder="Type your negotiation message..."
             className="message-textarea"
             rows={3}
-            disabled={isTyping}
+            disabled={isTyping || disabled}
           />
           <button 
             type="submit" 
             className="send-button"
-            disabled={!message.trim() || isTyping}
+            disabled={!message.trim() || isTyping || disabled}
           >
             {isTyping ? (
               <div className="sending-indicator">

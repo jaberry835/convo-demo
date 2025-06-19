@@ -146,3 +146,57 @@
 .suggestions-container::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
+
+/* Initiation controls styling */
+.initiation-controls {
+  padding: 20px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #dee2e6;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.initiation-controls select,
+.initiation-controls input {
+  padding: 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  flex: 1;
+}
+
+.initiation-controls .initiate-btn {
+  padding: 8px 16px;
+  background-color: #0d6efd;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.initiation-controls .initiate-btn:hover:not(:disabled) {
+  background-color: #0b5ed7;
+  transform: translateY(-1px);
+}
+
+.initiation-controls .initiate-btn:disabled {
+  background-color: #adb5bd;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Placeholder before initiation */
+.initiation-placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #666;
+  font-style: italic;
+  background-color: #f8f9fa;
+}

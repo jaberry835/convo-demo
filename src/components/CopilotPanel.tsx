@@ -3,7 +3,25 @@ import { Suggestion } from '../types/conversation';
 import SuggestionCard from './SuggestionCard';
 import './CopilotPanel.css';
 
-const CopilotPanel: React.FC = () => {
+interface CopilotPanelProps {
+  buyerOptions: string[];
+  selectedBuyer: string;
+  setSelectedBuyer: React.Dispatch<React.SetStateAction<string>>;
+  productDesc: string;
+  setProductDesc: React.Dispatch<React.SetStateAction<string>>;
+  initiateConversation: () => Promise<void>;
+  started: boolean;
+}
+
+const CopilotPanel: React.FC<CopilotPanelProps> = ({
+  buyerOptions,
+  selectedBuyer,
+  setSelectedBuyer,
+  productDesc,
+  setProductDesc,
+  initiateConversation,
+  started
+}) => {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -94,36 +112,69 @@ const CopilotPanel: React.FC = () => {
         </button>
       </div>
 
-      <div className="analysis-status">
-        <div className="status-indicator">
-          <span className={`status-dot ${isAnalyzing ? 'analyzing' : 'ready'}`}></span>
-          {isAnalyzing ? 'Analyzing conversation patterns...' : 'Analysis complete'}
+      {!started && (
+        <div className="initiation-controls">
+          <select
+            aria-label="Select buyer"
+            value={selectedBuyer}
+            onChange={e => setSelectedBuyer(e.target.value)}
+          >
+            {buyerOptions.map(b => <option key={b} value={b}>{b}</option>)}
+          </select>
+          <input
+            type="text"
+            placeholder="Describe the product"
+            value={productDesc}
+            onChange={e => setProductDesc(e.target.value)}
+          />
+          <button
+            className="initiate-btn"
+            onClick={initiateConversation}
+            disabled={!productDesc.trim()}
+          >
+            Initiate Conversation
+          </button>
         </div>
-      </div>
+      )}
 
-      <div className="suggestions-container">
-        {isAnalyzing ? (
-          <div className="loading-placeholder">
-            <div className="loading-spinner"></div>
-            <p>Analyzing conversation using Azure AI Search and OpenAI...</p>
+      {!started ? (
+        <div className="initiation-placeholder">
+          Start a negotiation to see AI-powered insights and recommendations.
+        </div>
+      ) : (
+        <>
+          <div className="analysis-status">
+            <div className="status-indicator">
+              <span className={`status-dot ${isAnalyzing ? 'analyzing' : 'ready'}`}></span>
+              {isAnalyzing ? 'Analyzing conversation patterns...' : 'Analysis complete'}
+            </div>
           </div>
-        ) : (
-          <>
-            {suggestions.length === 0 ? (
-              <div className="no-suggestions">
-                <p>No suggestions available. Start or continue the conversation to get AI-powered insights.</p>
+
+          <div className="suggestions-container">
+            {isAnalyzing ? (
+              <div className="loading-placeholder">
+                <div className="loading-spinner"></div>
+                <p>Analyzing conversation using Azure AI Search and OpenAI...</p>
               </div>
             ) : (
-              suggestions.map(suggestion => (
-                <SuggestionCard 
-                  key={suggestion.id} 
-                  suggestion={suggestion} 
-                />
-              ))
+              <>
+                {suggestions.length === 0 ? (
+                  <div className="no-suggestions">
+                    <p>No suggestions available. Continue the conversation to get more insights.</p>
+                  </div>
+                ) : (
+                  suggestions.map(suggestion => (
+                    <SuggestionCard 
+                      key={suggestion.id} 
+                      suggestion={suggestion} 
+                    />
+                  ))
+                )}
+              </>
             )}
-          </>
-        )}
-      </div>
+          </div>
+        </>
+      )}
 
       <div className="copilot-footer">
         <div className="power-indicator">

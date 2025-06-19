@@ -57,29 +57,24 @@ async function retrieveContext(query: string, topK: number = 5): Promise<string[
     return []; // Return empty array if search fails
   }
 }
-export async function getSellerResponse(buyerMessage: string): Promise<string> {
+export async function getSellerResponse(
+  buyer: string,
+  product: string,
+  buyerMessage: string
+): Promise<string> {
   try {
     // First, retrieve relevant context from Azure Search
     const contexts = await retrieveContext(buyerMessage);
     
     const messages = [
-      { 
-        role: "system" as const, 
-        content: `You are SilverHawk, a professional seller of premium Moonlight Serum. 
-        You should respond to buyer inquiries with helpful, secure, and persuasive responses. 
-        Use the following grounding data from previous conversations to inform your responses. 
-        Maintain a professional tone while being personable and trustworthy.
-        
-        Grounding Data from Previous Conversations:
-        ${contexts.length > 0 ? contexts.join('\n\n') : 'No previous conversation data available.'}` 
-      },
-      { 
-        role: "user" as const, 
-        content: buyerMessage 
-      }
+      { role: "system" as const,
+        content: `You are SilverHawk, a seller of premium ${product}. Reply in a friendly chat style to ${buyer}. Use the grounding info to answer questions casually and clearly. Keep it concise and conversational. Whenever mentioning price, quote all amounts in cryptocurrency (e.g., BTC).
+
+Info from past chats:
+${contexts.length > 0 ? contexts.join('\n\n') : 'No past chat data.'}` },
+      { role: "user" as const, content: buyerMessage }
     ];
 
-    // Use standard OpenAI chat completion with Azure endpoint
     const result = await openaiClient.chat.completions.create({
       model: openaiDeployment,
       messages: messages,
@@ -88,13 +83,11 @@ export async function getSellerResponse(buyerMessage: string): Promise<string> {
     });
 
     const chatChoice = result.choices[0];
-    return chatChoice.message?.content?.trim() || "I apologize, but I'm having trouble processing your request right now. Please try again.";
-    
+    return chatChoice.message?.content?.trim() ||
+      "Sorry, I'm having trouble responding right now. Could you ask again?";
   } catch (error) {
     console.error("Error generating seller response:", error);
-    
-    // Fallback response if Azure services are unavailable
-    return "Thank you for your message. I'm currently experiencing some technical difficulties. Please allow me a moment to get back to you with a proper response.";
+    return "Hey! I'm having some issues. Please bear with me, and I'll get back shortly.";
   }
 }
 
@@ -108,7 +101,7 @@ export async function getSellerResponseSimple(buyerMessage: string): Promise<str
         role: "system" as const, 
         content: `You are SilverHawk, a professional seller of premium Moonlight Serum. 
         You should respond to buyer inquiries with helpful, secure, and persuasive responses. 
-        Maintain a professional tone while being personable and trustworthy.` 
+        Maintain a professional tone while being personable and trustworthy. Whenever mentioning price, quote all amounts in cryptocurrency (e.g., BTC).` 
       },
       { 
         role: "user" as const, 
@@ -129,5 +122,35 @@ export async function getSellerResponseSimple(buyerMessage: string): Promise<str
   } catch (error) {
     console.error("Error generating seller response:", error);
     return "Thank you for your message. I'm currently experiencing some technical difficulties. Please allow me a moment to get back to you with a proper response.";
+  }
+}
+
+/**
+ * Generate the buyer's initial message expressing interest in a product using LLM.
+ */
+export async function getBuyerInitialMessage(
+  buyer: string,
+  product: string
+): Promise<string> {
+  try {
+    const messages = [
+      {
+        role: 'system' as const,
+        content: `You are ${buyer}, a buyer interested in ${product}. Write a quick, friendly chat message expressing interest and asking for details. Keep it casual and conversational, like a chat. When discussing price, quote all amounts in cryptocurrency (e.g., BTC).`
+      }
+    ];
+
+    const result = await openaiClient.chat.completions.create({
+      model: openaiDeployment,
+      messages,
+      temperature: 0.7,
+      max_tokens: 200
+    });
+
+    return result.choices[0].message?.content?.trim() ||
+      `Hi, I'm interested in ${product}. Can you share more details so we can chat further?`;
+  } catch (err) {
+    console.error('Error generating buyer initial message:', err);
+    return `Hi, I'm interested in ${product}. Can you share more details?`;
   }
 }
