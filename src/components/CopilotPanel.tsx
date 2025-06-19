@@ -51,7 +51,7 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
       id: '1',
       type: 'pattern_analysis',
       title: 'Similar Conversation Pattern Detected',
-      content: 'This conversation follows a typical "premium product verification" pattern. In 78% of similar cases, buyers who emphasize quality concerns at this stage successfully negotiate 10-15% price reductions.',
+      content: '',
       confidence: 0.85,
       action_items: [
         'Ask for product certification details',
