@@ -210,3 +210,30 @@
   color: #212529;
   font-style: italic;
 }
+
+/* Pattern suggestion header and controls */
+.pattern-suggestion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.pattern-suggestion-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.section-refresh-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #6c757d;
+  transition: color 0.2s ease;
+}
+
+.section-refresh-btn:hover {
+  color: #333;
+}

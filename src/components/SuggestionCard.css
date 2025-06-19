@@ -194,6 +194,24 @@
   color: white;
 }
 
+/* Link-style refresh button next to confidence badge */
+.refresh-link {
+  background: none;
+  border: none;
+  color: #0d6efd;
+  text-decoration: underline;
+  padding: 2px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.refresh-link:hover {
+  background-color: #e9ecef;
+}
+
 /* Type-specific styling */
 .suggestion-card.pattern_analysis .suggestion-header {
   border-left: 4px solid #007bff;

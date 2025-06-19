@@ -4,9 +4,10 @@ import './SuggestionCard.css';
 
 interface SuggestionCardProps {
   suggestion: Suggestion;
+  onRefresh?: () => void;
 }
 
-const SuggestionCard: React.FC<SuggestionCardProps> = ({ suggestion }) => {
+const SuggestionCard: React.FC<SuggestionCardProps> = ({ suggestion, onRefresh }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const getTypeIcon = (type: string) => {
@@ -51,6 +52,15 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({ suggestion }) => {
           <div className={`confidence-badge ${getConfidenceLevel(suggestion.confidence)}`}>
             {Math.round(suggestion.confidence * 100)}% confidence
           </div>
+          {onRefresh && (
+            <button
+              className="refresh-link"
+              onClick={(e) => { e.stopPropagation(); onRefresh(); }}
+              title="Refresh this suggestion"
+            >
+              🔄
+            </button>
+          )}
           <button className={`expand-btn ${isExpanded ? 'expanded' : ''}`}>
             {isExpanded ? '▲' : '▼'}
           </button>

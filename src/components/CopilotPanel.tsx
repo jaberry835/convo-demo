@@ -128,7 +128,7 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
           onClick={handleRefreshSuggestions}
           disabled={isAnalyzing}
         >
-          {isAnalyzing ? 'Analyzing...' : 'Refresh Analysis'}
+          {isAnalyzing ? 'Analyzing...' : 'Refresh All Analysis'}
         </button>
       </div>
 
@@ -184,20 +184,14 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
                 <p>Analyzing conversation using Azure AI Search and OpenAI...</p>
               </div>
             ) : (
-              <>
-                {suggestions.length === 0 ? (
-                  <div className="no-suggestions">
-                    <p>No suggestions available. Continue the conversation to get more insights.</p>
-                  </div>
-                ) : (
-                  suggestions.map(suggestion => (
-                    <SuggestionCard 
-                      key={suggestion.id} 
-                      suggestion={suggestion} 
-                    />
-                  ))
-                )}
-              </>
+              // Render all suggestions using SuggestionCard to preserve styling and collapse behavior
+              suggestions.map(suggestion => (
+                <SuggestionCard
+                  key={suggestion.id}
+                  suggestion={suggestion}
+                  onRefresh={handleRefreshSuggestions}
+                />
+              ))
             )}
           </div>
         </>
