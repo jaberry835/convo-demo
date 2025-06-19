@@ -3,6 +3,22 @@ import { Suggestion, Message } from '../types/conversation';
 import SuggestionCard from './SuggestionCard';
 import './CopilotPanel.css';
 
+// Static sample data for all sections
+const sampleSuggestions: Suggestion[] = [
+  { id: '1', type: 'pattern_analysis', title: 'Similar Conversation Pattern Detected', content: '', confidence: 0.85,
+    action_items: ['Ask for product certification details', 'Request third-party quality verification','Inquire about bulk pricing options']
+  },
+  { id: '2', type: 'negotiation_tactic', title: 'Leverage Escrow Service Discussion', content: 'The seller mentioned ES-001 escrow; use this to negotiate fees.', confidence: 0.72,
+    action_items: ['Research ES-001 fee structure', 'Propose alternative escrow services', 'Negotiate who pays escrow fees']
+  },
+  { id: '3', type: 'risk_assessment', title: 'Communication Security Analysis', content: 'Secure channel detected; leverage this to ask for volume discounts.', confidence: 0.91,
+    action_items: ['Maintain professional security language', 'Use leverage for bulk discounts','Position as long-term client']
+  },
+  { id: '4', type: 'next_move', title: 'Recommended Next Response', content: 'Acknowledge quality standards, then ask about volume tiers.', confidence: 0.88,
+    action_items: ['Acknowledge quality standards', 'Ask about volume pricing tiers','Request sample for verification']
+  }
+];
+
 interface CopilotPanelProps {
   buyerOptions: string[];
   selectedBuyer: string;
@@ -24,8 +40,9 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
   started,
   messages
 }) => {
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>(sampleSuggestions);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [refreshingIds, setRefreshingIds] = useState<Record<string, boolean>>({});
 
   // Detect crypto amounts and estimate USD
   const conversion = useMemo(() => {
@@ -45,57 +62,6 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
     return '';
   }, [messages]);
 
-  // Sample suggestions based on the negotiation stage
-  const sampleSuggestions: Suggestion[] = [
-    {
-      id: '1',
-      type: 'pattern_analysis',
-      title: 'Similar Conversation Pattern Detected',
-      content: '',
-      confidence: 0.85,
-      action_items: [
-        'Ask for product certification details',
-        'Request third-party quality verification',
-        'Inquire about bulk pricing options'
-      ]
-    },
-    {
-      id: '2',
-      type: 'negotiation_tactic',
-      title: 'Leverage Escrow Service Discussion',
-      content: 'The seller mentioned a specific escrow service (ES-001). This creates an opportunity to negotiate transaction fees or suggest alternative escrow services with better terms.',
-      confidence: 0.72,
-      action_items: [
-        'Research ES-001 fee structure',
-        'Propose alternative escrow services',
-        'Negotiate who pays escrow fees'
-      ]
-    },
-    {
-      id: '3',
-      type: 'risk_assessment',
-      title: 'Communication Security Analysis',
-      content: 'Both parties are emphasizing secure communication. This suggests high-value transaction expectations. Consider this when positioning your price negotiations.',
-      confidence: 0.91,
-      action_items: [
-        'Maintain professional security language',
-        'Use this as leverage for bulk discounts',
-        'Position yourself as a serious, long-term client'
-      ]
-    },
-    {
-      id: '4',
-      type: 'next_move',
-      title: 'Recommended Next Response',
-      content: 'Based on the current stage (specification), the optimal next move is to acknowledge their quality standards while introducing a volume-based pricing inquiry.',
-      confidence: 0.88,
-      action_items: [
-        'Acknowledge their quality standards',
-        'Ask about volume pricing tiers',
-        'Request sample for verification'
-      ]
-    }
-  ];
   useEffect(() => {
     // Simulate AI analysis loading
     setIsAnalyzing(true);
@@ -108,11 +74,10 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Refresh all suggestions
   const handleRefreshSuggestions = () => {
     setIsAnalyzing(true);
     setSuggestions([]);
-    
-    // Simulate new analysis
     setTimeout(() => {
       setSuggestions(sampleSuggestions);
       setIsAnalyzing(false);
@@ -184,12 +149,17 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
                 <p>Analyzing conversation using Azure AI Search and OpenAI...</p>
               </div>
             ) : (
-              // Render all suggestions using SuggestionCard to preserve styling and collapse behavior
               suggestions.map(suggestion => (
                 <SuggestionCard
                   key={suggestion.id}
                   suggestion={suggestion}
-                  onRefresh={handleRefreshSuggestions}
+                  isRefreshing={!!refreshingIds[suggestion.id]}
+                  onRefresh={() => {
+                    setRefreshingIds(prev => ({ ...prev, [suggestion.id]: true }));
+                    setTimeout(() => {
+                      setRefreshingIds(prev => ({ ...prev, [suggestion.id]: false }));
+                    }, 1000);
+                  }}
                 />
               ))
             )}

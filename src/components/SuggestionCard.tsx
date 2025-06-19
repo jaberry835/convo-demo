@@ -5,9 +5,10 @@ import './SuggestionCard.css';
 interface SuggestionCardProps {
   suggestion: Suggestion;
   onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
-const SuggestionCard: React.FC<SuggestionCardProps> = ({ suggestion, onRefresh }) => {
+const SuggestionCard: React.FC<SuggestionCardProps> = ({ suggestion, onRefresh, isRefreshing = false }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const getTypeIcon = (type: string) => {
@@ -40,12 +41,8 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({ suggestion, onRefresh }
     <div className={`suggestion-card ${suggestion.type}`}>
       <div className="suggestion-header" onClick={() => setIsExpanded(!isExpanded)}>
         <div className="suggestion-title">
-          <span 
-            className="type-icon"
-            style={{ color: getTypeColor(suggestion.type) }}
-          >
-            {getTypeIcon(suggestion.type)}
-          </span>
+          {/* Icon with type-specific class for styling */}
+          <span className={`type-icon ${suggestion.type}`}>{getTypeIcon(suggestion.type)}</span>
           <h3>{suggestion.title}</h3>
         </div>
         <div className="suggestion-controls">
@@ -56,9 +53,10 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({ suggestion, onRefresh }
             <button
               className="refresh-link"
               onClick={(e) => { e.stopPropagation(); onRefresh(); }}
-              title="Refresh this suggestion"
+              disabled={isRefreshing}
+              title={isRefreshing ? 'Refreshing...' : 'Refresh this suggestion'}
             >
-              🔄
+              {isRefreshing ? '⏳' : '🔄'}
             </button>
           )}
           <button className={`expand-btn ${isExpanded ? 'expanded' : ''}`}>

@@ -35,6 +35,12 @@
   font-weight: bold;
 }
 
+/* Type-icon color by suggestion type */
+.type-icon.pattern_analysis { color: #007bff; }
+.type-icon.negotiation_tactic { color: #28a745; }
+.type-icon.risk_assessment { color: #dc3545; }
+.type-icon.next_move { color: #6f42c1; }
+
 .suggestion-title h3 {
   margin: 0;
   font-size: 1rem;
