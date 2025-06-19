@@ -64,3 +64,34 @@
 .messages-container::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
+
+/* Negotiation stage display */
+.stage-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #dee2e6;
+  flex-shrink: 0;
+}
+
+.stage-label {
+  font-weight: 500;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.stage-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: #fff;
+  text-transform: capitalize;
+  font-size: 0.85rem;
+}
+
+.stage-badge.initiation { background-color: #007bff; }
+.stage-badge.specification { background-color: #28a745; }
+.stage-badge.payment { background-color: #ffc107; color: #333; }
+.stage-badge.finalization { background-color: #17a2b8; }
+.stage-badge.offer_extra { background-color: #6f42c1; }

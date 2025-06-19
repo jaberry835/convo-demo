@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { SearchClient, AzureKeyCredential } from '@azure/search-documents';
+import { Message } from '../types/conversation';
 
 // Load configuration from environment variables (set in .env)
 const openaiEndpoint = process.env.REACT_APP_OPENAI_ENDPOINT!;
@@ -60,24 +61,34 @@ async function retrieveContext(query: string, topK: number = 5): Promise<string[
 export async function getSellerResponse(
   buyer: string,
   product: string,
-  buyerMessage: string
+  buyerMessage: string,
+  conversationHistory: Message[] = []
 ): Promise<string> {
   try {
     // First, retrieve relevant context from Azure Search
     const contexts = await retrieveContext(buyerMessage);
     
+    // Construct chat messages including history for context
     const messages = [
       { role: "system" as const,
-        content: `You are SilverHawk, a seller of premium ${product}. Reply in a friendly chat style to ${buyer}. Use the grounding info to answer questions casually and clearly. Keep it concise and conversational. Whenever mentioning price, quote all amounts in cryptocurrency (e.g., BTC).
-
-Info from past chats:
-${contexts.length > 0 ? contexts.join('\n\n') : 'No past chat data.'}` },
+        content: `You are SilverHawk, a seller of premium ${product}. Reply in a friendly, conversational style to ${buyer}. Use the grounding info to answer questions casually and clearly. Keep it concise. Whenever mentioning price, quote all amounts in cryptocurrency (e.g., BTC). If the buyer indicates they have sent BTC to your wallet, acknowledge receipt and proceed to finalize the sale.
++
++Info from past chats:
++${contexts.length > 0 ? contexts.join('\n\n') : 'No past chat data.'}` },
+      // Include prior conversation messages
+      ...conversationHistory.map(h => ({
+        role: h.role === 'Buyer' ? 'user' : 'assistant',
+        content: h.message
+      })),
+      // Latest buyer message
       { role: "user" as const, content: buyerMessage }
     ];
 
+    // Bypass TypeScript overload mismatch by ignoring type check
+    // @ts-ignore
     const result = await openaiClient.chat.completions.create({
       model: openaiDeployment,
-      messages: messages,
+      messages: messages as any,
       temperature: 0.7,
       max_tokens: 500,
     });
@@ -96,25 +107,21 @@ ${contexts.length > 0 ? contexts.join('\n\n') : 'No past chat data.'}` },
  */
 export async function getSellerResponseSimple(buyerMessage: string): Promise<string> {
   try {
+    // Simplified fallback uses only the latest buyer message
     const messages = [
       { 
         role: "system" as const, 
-        content: `You are SilverHawk, a professional seller of premium Moonlight Serum. 
-        You should respond to buyer inquiries with helpful, secure, and persuasive responses. 
-        Maintain a professional tone while being personable and trustworthy. Whenever mentioning price, quote all amounts in cryptocurrency (e.g., BTC).` 
+        content: `You are SilverHawk, a professional seller of premium Moonlight Serum. Maintain a professional yet personable tone. Whenever mentioning price, quote all amounts in cryptocurrency (e.g., BTC). If the buyer indicates they have sent BTC to your wallet, acknowledge receipt and finalize the sale.`,
       },
-      { 
-        role: "user" as const, 
-        content: buyerMessage 
-      }
+      { role: "user" as const, content: buyerMessage }
     ];
 
     const result = await openaiClient.chat.completions.create({
-      model: openaiDeployment,
-      messages: messages,
-      temperature: 0.7,
-      max_tokens: 500,
-    });
+       model: openaiDeployment,
+       messages: messages as any,
+       temperature: 0.7,
+       max_tokens: 500,
+     });
 
     const chatChoice = result.choices[0];
     return chatChoice.message?.content?.trim() || "I apologize, but I'm having trouble processing your request right now. Please try again.";

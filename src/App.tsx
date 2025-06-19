@@ -35,7 +35,8 @@ function App() {
     };
     setMessages([buyerMsg]);
 
-    const reply = await getSellerResponse(selectedBuyer, productDesc, initialText);
+    // Include only the buyer's initial message in history
+    const reply = await getSellerResponse(selectedBuyer, productDesc, initialText, [buyerMsg]);
     const sellerMsg: Message = {
       turn_order: 2,
       timestamp: new Date().toISOString(),
@@ -52,13 +53,20 @@ function App() {
   };
 
   const handleSendMessage = async (messageText: string) => {
+    // Determine negotiation stage based on buyer message content
+    const text = messageText.toLowerCase();
+    const stage = messages.length === 0
+      ? 'initiation'
+      : text.match(/\b(payment|wallet|transaction)\b/)  ? 'payment'
+      : text.match(/\b(finalize|confirm|complete)\b/)     ? 'finalization'
+      : 'specification';
     const newMessage: Message = {
       turn_order: messages.length + 1,
       timestamp: new Date().toISOString(),
       role: 'Buyer',
       handle: selectedBuyer,
       message: messageText,
-      negotiation_stage: messages.length === 0 ? 'initiation' : 'in_progress',
+      negotiation_stage: stage,
       coded_language: false,
       security_flags: { encrypted: true, pgp_key_exchanged: true },
       payment_details: null
@@ -68,14 +76,16 @@ function App() {
     setIsBotTyping(true);
 
     try {
-      const botReply = await getSellerResponse(selectedBuyer, productDesc, messageText);
+      // Pass full conversation history including the new buyer message
+      const history = [...messages, newMessage];
+      const botReply = await getSellerResponse(selectedBuyer, productDesc, messageText, history);
       const sellerMessage: Message = {
         turn_order: messages.length + 2,
         timestamp: new Date().toISOString(),
         role: 'Seller',
         handle: 'SilverHawk',
         message: botReply,
-        negotiation_stage: 'specification',
+        negotiation_stage: stage,
         coded_language: false,
         security_flags: { encrypted: true, pgp_key_exchanged: true },
         payment_details: null
