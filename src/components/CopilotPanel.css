@@ -200,3 +200,13 @@
   font-style: italic;
   background-color: #f8f9fa;
 }
+
+/* Estimated USD conversion display */
+.conversion-display {
+  padding: 12px 20px;
+  background-color: #f1f3f5;
+  border-bottom: 1px solid #dee2e6;
+  font-size: 0.9rem;
+  color: #212529;
+  font-style: italic;
+}

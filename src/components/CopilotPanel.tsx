@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Suggestion } from '../types/conversation';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Suggestion, Message } from '../types/conversation';
 import SuggestionCard from './SuggestionCard';
 import './CopilotPanel.css';
 
@@ -11,6 +11,7 @@ interface CopilotPanelProps {
   setProductDesc: React.Dispatch<React.SetStateAction<string>>;
   initiateConversation: () => Promise<void>;
   started: boolean;
+  messages: Message[];
 }
 
 const CopilotPanel: React.FC<CopilotPanelProps> = ({
@@ -20,10 +21,27 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
   productDesc,
   setProductDesc,
   initiateConversation,
-  started
+  started,
+  messages
 }) => {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // Detect crypto amounts and estimate USD
+  const conversion = useMemo(() => {
+    const regex = /([0-9]+(?:\.[0-9]+)?)\s*(BTC|ETH)/i;
+    for (const msg of messages) {
+      const match = msg.message.match(regex);
+      if (match) {
+        const amount = parseFloat(match[1]);
+        const currency = match[2].toUpperCase();
+        const rates: Record<string, number> = { BTC: 60000, ETH: 3500 };
+        const usd = (amount * (rates[currency] || 0)).toFixed(2);
+        return `${amount} ${currency} ≈ $${usd}`;
+      }
+    }
+    return '';
+  }, [messages]);
 
   // Sample suggestions based on the negotiation stage
   const sampleSuggestions: Suggestion[] = [
@@ -112,6 +130,13 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
         </button>
       </div>
 
+      {conversion && (
+        <div className="conversion-display">
+          <strong>Estimated USD:</strong> {conversion}
+        </div>
+      )}
+
+      {/* initiation controls now in CopilotPanel */}
       {!started && (
         <div className="initiation-controls">
           <select

@@ -122,6 +122,7 @@ function App() {
               setProductDesc={setProductDesc}
               initiateConversation={initiateConversation}
               started={started}
+              messages={messages}
             />
           </Allotment.Pane>
         </Allotment>
