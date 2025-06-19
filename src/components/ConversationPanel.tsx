@@ -4,15 +4,6 @@ import MessageInput from './MessageInput';
 import './ConversationPanel.css';
 import { Message } from '../types/conversation';
 
-// Utility to pick badge color based on negotiation stage
-const stageColors: Record<string, string> = {
-  initiation: '#007bff',
-  specification: '#28a745',
-  payment: '#ffc107',
-  finalization: '#17a2b8',
-  offer_extra: '#6f42c1'
-};
-
 interface ConversationPanelProps {
   messages: Message[];
   isBotTyping: boolean;
