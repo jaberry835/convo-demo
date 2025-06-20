@@ -3,7 +3,11 @@ import { Allotment } from 'allotment';
 import ConversationPanel from './components/ConversationPanel';
 import CopilotPanel from './components/CopilotPanel';
 import { Message } from './types/conversation';
-import { getBuyerInitialMessage, getSellerResponse, translateText } from './services/aiServiceRAG';
+import {
+  getBuyerInitialMessage,
+  getSellerResponse,
+  translateText
+} from './services';
 import 'allotment/dist/style.css';
 import './App.css';
 

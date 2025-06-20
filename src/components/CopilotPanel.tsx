@@ -1,6 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { Suggestion, Message } from '../types/conversation';
-import { getPatternAnalysisSuggestions, retrieveContext } from '../services/aiServiceRAG';
+import {
+  getPatternAnalysisSuggestions,
+  retrieveContext
+} from '../services';
 import SuggestionCard from './SuggestionCard';
 import './CopilotPanel.css';
 
