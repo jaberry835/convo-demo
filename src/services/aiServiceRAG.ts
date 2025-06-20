@@ -33,13 +33,13 @@ const openaiClient = new OpenAI({
  */
 export async function retrieveContext(query: string, topK: number = 5): Promise<string[]> {
   // Use Azure Cognitive Search REST API to POST a search query
-  const url = `${searchEndpoint.replace(/\/+$/, '')}/indexes/${encodeURIComponent(searchIndexName)}/docs/search?api-version=2024-07-01`;
+  // Format: /indexes('indexName')/docs/search
+  const url = `${searchEndpoint.replace(/\/+$/, '')}/indexes('${searchIndexName}')/docs/search?api-version=2024-07-01`;
   // Prevent empty search expressions, use '*' to match all if query is blank
   const searchText = query.trim() === '' ? '*' : query;
   const payload = {
     search: searchText,
-    top: topK,
-    select: ['content', 'message', 'role', 'negotiation_stage']
+    top: topK
   };
   console.debug('retrieveContext - POST', url);
   console.debug('retrieveContext - payload', JSON.stringify(payload, null, 2));
@@ -213,8 +213,19 @@ ${conversation.map(m => `${m.role}: ${m.message}`).join('\n')}`
       temperature: 0.7,
       max_tokens: 800
     });
-    const text = result.choices[0].message?.content || '[]';
-    
+    // Get raw LLM output and sanitize markdown fences
+    let raw = result.choices[0].message?.content || '[]';
+    let text = raw.trim();
+    // If wrapped in markdown fences (e.g., ```json ... ```), strip them
+    if (text.startsWith('```')) {
+      const lines = text.split('\n');
+      // Remove opening fence
+      if (lines[0].startsWith('```')) lines.shift();
+      // Remove closing fence if present
+      if (lines[lines.length - 1].startsWith('```')) lines.pop();
+      text = lines.join('\n').trim();
+    }
+
     let suggestions: Suggestion[];
     try {
       suggestions = JSON.parse(text);
