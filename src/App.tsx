@@ -106,6 +106,12 @@ function App() {
     <div className="App">
       <header className="App-header">
         <h1>Azure AI Negotiation Assistant Demo</h1>
+        <button
+          className="reset-btn"
+          onClick={() => window.location.reload()}
+        >
+          New Conversation
+        </button>
       </header>
       <div className="App-content">
         <Allotment defaultSizes={[60, 40]}>

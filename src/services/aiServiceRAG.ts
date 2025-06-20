@@ -58,13 +58,24 @@ export async function retrieveContext(query: string, topK: number = 5): Promise<
       throw new Error(`Search request failed: ${response.status} ${response.statusText}`);
     }
     const data = JSON.parse(text) as { value: Array<Record<string, any>> };
+    // Debug: Log the first document structure to see available fields
+    if (data.value.length > 0) {
+      console.debug('Available fields in search result:', Object.keys(data.value[0]));
+      console.debug('Sample document:', data.value[0]);
+    }
     // Format each result into a JSON string for AI consumption
-    return data.value.map(doc => JSON.stringify({
-      content: doc.content || doc.message || '',
-      role: doc.role || '',
-      stage: doc.negotiation_stage || '',
-      score: doc['@search.score'] || 0
-    }));
+    return data.value.map(doc => {
+      // Try multiple possible field names for content
+      const content = doc.content || doc.message || doc.turns || doc.conversation_id || 
+                     JSON.stringify(doc.turns) || JSON.stringify(doc) || '';
+      return JSON.stringify({
+        content: content,
+        role: doc.role || '',
+        stage: doc.negotiation_stage || '',
+        score: doc['@search.score'] || 0,
+        raw: doc // Include raw document for debugging
+      });
+    });
   } catch (error) {
     console.error('Error retrieving context from Azure Search:', error);
     return [];
@@ -80,16 +91,19 @@ export async function getSellerResponse(
   try {
     // First, retrieve relevant context from Azure Search
     const contexts = await retrieveContext(buyerMessage);
+    // Limit to top 3 contexts and truncate each to 1000 chars to reduce token usage
+    const limitedContexts = contexts.slice(0, 3).map(c => c.length > 1000 ? c.slice(0, 1000) : c);
     
-    // Construct chat messages including history for context
+    // Construct chat messages including trimmed context and recent history
+    // Only include the last 10 messages from history
+    const recentHistory = conversationHistory.slice(-10);
     const messages = [
       { role: "system" as const,
         content: `You are SilverHawk, a seller of premium ${product}. Reply in a friendly, conversational style to ${buyer}. Use the grounding info to answer questions casually and clearly. Keep it concise. Whenever mentioning price, quote all amounts in cryptocurrency (e.g., BTC). If the buyer indicates they have sent BTC to your wallet, acknowledge receipt and proceed to finalize the sale.
-+
-+Info from past chats:
-+${contexts.length > 0 ? contexts.join('\n\n') : 'No past chat data.'}` },
+Info from past chats (trimmed):
+${limitedContexts.length > 0 ? limitedContexts.join('\n\n') : 'No past chat data.'}` },
       // Include prior conversation messages
-      ...conversationHistory.map(h => ({
+      ...recentHistory.map(h => ({
         role: h.role === 'Buyer' ? 'user' : 'assistant',
         content: h.message
       })),
@@ -186,23 +200,24 @@ export async function getPatternAnalysisSuggestions(
     // Retrieve relevant context from Azure Search using last user message
     const lastMessage = conversation.length > 0 ? conversation[conversation.length - 1].message : '';
     const contexts = await retrieveContext(lastMessage);
+    // Limit to top 3 contexts and truncate each to 1000 chars
+    const limitedContexts = contexts.slice(0, 3).map(c => c.length > 1000 ? c.slice(0, 1000) : c);
 
     // Build chat messages for pattern analysis
     const messagesPayload: any[] = [
       {
         role: 'system',
         content: `You are a buyer-focused AI assistant helping the buyer secure the best possible deal and ensure they receive exactly what they expect. ` +
-          `Analyze negotiation patterns from the conversation and similar past examples, and provide 3 creative, actionable suggestions tailored to the buyer’s interests. ` +
-          `Output a JSON array where each item includes the following fields: ` +
-          `id (unique string), type ('pattern_analysis'), title, content, confidence (0.0 to 1.0), rank (1 = highest priority), next_response_area (the next logical area the buyer should address), and action_items (array of prompt suggestions the buyer can copy to continue the conversation).` +
+          `Analyze negotiation patterns from the conversation and similar past examples, and provide 3 concise suggestions tailored to the buyer’s interests. ` +
+          `Output JSON with id, type, title, content, confidence (0.0–1.0), rank (1 highest), next_response_area, and action_items array.` +
           `
-Contexts:
-${contexts.join('\n\n')}`
+Contexts (trimmed):
+${limitedContexts.join('\n\n')}`
       },
       {
         role: 'user',
-        content: `Conversation History:
-${conversation.map(m => `${m.role}: ${m.message}`).join('\n')}`
+        content: `Conversation History (last 10):
++${conversation.slice(-10).map(m => `${m.role}: ${m.message}`).join('\n')}`
       }
     ];
 
