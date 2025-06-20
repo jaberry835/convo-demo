@@ -24,8 +24,8 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
   setProductDesc,
   initiateConversation,
   started,
-  messages
-  , setDraftMessage
+  messages,
+  setDraftMessage
 }) => {
   // Pattern analysis suggestions and loading state
   const [patternSuggestions, setPatternSuggestions] = useState<Suggestion[]>([]);

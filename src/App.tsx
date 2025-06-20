@@ -7,12 +7,32 @@ import { getBuyerInitialMessage, getSellerResponse } from './services/aiServiceR
 import 'allotment/dist/style.css';
 import './App.css';
 
-const buyerOptions = ['ShadowWolf', 'LunarShopper', 'MoonBuyerX'];
+// Expanded buyer options list
+const buyerOptions = [
+  'ShadowWolf', 'LunarShopper', 'MoonBuyerX', 'CryptoCollector',
+  'StellarShopper', 'GalaxyBuyer', 'NebulaNomad', 'OrbitTrader',
+  'CometCollector', 'AstroAdmirer'
+];
+// Seller options for random selection
+const sellerOptions = [
+  'SilverHawk', 'GoldenFalcon', 'CrimsonFox', 'EmeraldEagle',
+  'AzureDragon', 'BronzeBear', 'RubyRaven', 'ObsidianOwl',
+  'TitaniumTiger', 'CopperCobra'
+];
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isBotTyping, setIsBotTyping] = useState(false);
-  const [selectedBuyer, setSelectedBuyer] = useState(buyerOptions[0]);
+  // Randomize buyer selection on initial load and allow changes via dropdown
+  const [selectedBuyer, setSelectedBuyer] = useState(() => {
+    const idx = Math.floor(Math.random() * buyerOptions.length);
+    return buyerOptions[idx];
+  });
+  // Randomize seller name on initial load
+  const [selectedSeller] = useState(() => {
+    const idx = Math.floor(Math.random() * sellerOptions.length);
+    return sellerOptions[idx];
+  });
   const [productDesc, setProductDesc] = useState('');
   const [started, setStarted] = useState(false);
   // Draft message state lifted for action insertion
@@ -38,12 +58,12 @@ function App() {
     setMessages([buyerMsg]);
 
     // Include only the buyer's initial message in history
-    const reply = await getSellerResponse(selectedBuyer, productDesc, initialText, [buyerMsg]);
+    const reply = await getSellerResponse(selectedSeller, selectedBuyer, productDesc, initialText, [buyerMsg]);
     const sellerMsg: Message = {
       turn_order: 2,
       timestamp: new Date().toISOString(),
       role: 'Seller',
-      handle: 'SilverHawk',
+      handle: selectedSeller, // use dynamic seller name
       message: reply,
       negotiation_stage: 'specification',
       coded_language: false,
@@ -82,12 +102,12 @@ function App() {
     try {
       // Pass full conversation history including the new buyer message
       const history = [...messages, newMessage];
-      const botReply = await getSellerResponse(selectedBuyer, productDesc, messageText, history);
+      const botReply = await getSellerResponse(selectedSeller, selectedBuyer, productDesc, messageText, history);
       const sellerMessage: Message = {
         turn_order: messages.length + 2,
         timestamp: new Date().toISOString(),
         role: 'Seller',
-        handle: 'SilverHawk',
+        handle: selectedSeller, // dynamic seller
         message: botReply,
         negotiation_stage: stage,
         coded_language: false,
@@ -123,6 +143,7 @@ function App() {
               started={started}
               draftMessage={draftMessage}
               setDraftMessage={setDraftMessage}
+              sellerHandle={selectedSeller} // pass dynamic seller
             />
           </Allotment.Pane>
           <Allotment.Pane minSize={250}>

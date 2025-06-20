@@ -76,6 +76,7 @@ export async function retrieveContext(query: string, topK: number = 5): Promise<
 }
 
 export async function getSellerResponse(
+  seller: string,
   buyer: string,
   product: string,
   buyerMessage: string,
@@ -92,7 +93,7 @@ export async function getSellerResponse(
     const recentHistory = conversationHistory.slice(-10);
     const messages = [
       { role: "system" as const,
-        content: `You are SilverHawk, a seller of premium ${product}. Reply in a friendly, conversational style to ${buyer}. Use the grounding info to answer questions casually and clearly. Keep it concise. Whenever mentioning price, quote all amounts in cryptocurrency (e.g., BTC). If the buyer indicates they have sent BTC to your wallet, acknowledge receipt and proceed to finalize the sale.
+        content: `You are ${seller}, a seller of premium ${product}. Reply in a friendly, conversational style to ${buyer}. Use the grounding info to answer questions casually and clearly. Keep it concise. Whenever mentioning price, quote all amounts in cryptocurrency (e.g., BTC). If the buyer indicates they have sent BTC to your wallet, acknowledge receipt and proceed to finalize the sale.
 Info from past chats (trimmed):
 ${limitedContexts.length > 0 ? limitedContexts.join('\n\n') : 'No past chat data.'}` },
       // Include prior conversation messages
@@ -125,16 +126,19 @@ ${limitedContexts.length > 0 ? limitedContexts.join('\n\n') : 'No past chat data
 /**
  * Alternative fallback function that generates responses without RAG if search fails
  */
-export async function getSellerResponseSimple(buyerMessage: string): Promise<string> {
+export async function getSellerResponseSimple(
+  seller: string,
+  buyerMessage: string
+): Promise<string> {
   try {
     // Simplified fallback uses only the latest buyer message
     const messages = [
-      { 
-        role: "system" as const, 
-        content: `You are SilverHawk, a professional seller of premium Moonlight Serum. Maintain a professional yet personable tone. Whenever mentioning price, quote all amounts in cryptocurrency (e.g., BTC). If the buyer indicates they have sent BTC to your wallet, acknowledge receipt and finalize the sale.`,
-      },
-      { role: "user" as const, content: buyerMessage }
-    ];
+       { 
+         role: "system" as const, 
+        content: `You are ${seller}, a professional seller of premium Moonlight Serum. Maintain a professional yet personable tone. Whenever mentioning price, quote all amounts in cryptocurrency (e.g., BTC). If the buyer indicates they have sent BTC to your wallet, acknowledge receipt and finalize the sale.`,
+       },
+       { role: "user" as const, content: buyerMessage }
+     ];
 
     const result = await openaiClient.chat.completions.create({
        model: openaiDeployment,
