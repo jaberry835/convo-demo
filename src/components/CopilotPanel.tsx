@@ -117,9 +117,20 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
                 {!detailLoading && !detailError && (
                   detailData.length > 0 ? (
                     <ul className="details-list">
-                      {detailData.map((ctx, idx) => (
-                        <li key={idx}><pre>{ctx}</pre></li>
-                      ))}
+                      {detailData.map((ctx, idx) => {
+                        let docObj: Record<string, any>;
+                        try { docObj = JSON.parse(ctx); } catch { docObj = { raw: ctx }; }
+                        return (
+                          <li key={idx} className="details-item">
+                            {Object.entries(docObj).map(([key, value]) => (
+                              <div key={key} className="details-field">
+                                <strong>{key}:</strong>{' '}
+                                <span className="details-value">{typeof value === 'string' ? value : JSON.stringify(value)}</span>
+                              </div>
+                            ))}
+                          </li>
+                        );
+                      })}
                     </ul>
                   ) : (
                     <p>No similar conversation snippets found for this suggestion.</p>

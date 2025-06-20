@@ -58,23 +58,16 @@ export async function retrieveContext(query: string, topK: number = 5): Promise<
       throw new Error(`Search request failed: ${response.status} ${response.statusText}`);
     }
     const data = JSON.parse(text) as { value: Array<Record<string, any>> };
-    // Debug: Log the first document structure to see available fields
-    if (data.value.length > 0) {
-      console.debug('Available fields in search result:', Object.keys(data.value[0]));
-      console.debug('Sample document:', data.value[0]);
-    }
-    // Format each result into a JSON string for AI consumption
+    // Return each document as JSON, excluding large vector fields
     return data.value.map(doc => {
-      // Try multiple possible field names for content
-      const content = doc.content || doc.message || doc.turns || doc.conversation_id || 
-                     JSON.stringify(doc.turns) || JSON.stringify(doc) || '';
-      return JSON.stringify({
-        content: content,
-        role: doc.role || '',
-        stage: doc.negotiation_stage || '',
-        score: doc['@search.score'] || 0,
-        raw: doc // Include raw document for debugging
-      });
+      // Create a shallow copy and remove unwanted fields
+      const filtered: Record<string, any> = { ...doc };
+      delete filtered['text_vector'];
+      delete filtered['chunk_id'];
+      delete filtered['parent_id'];
+      // Include the search score under a consistent key
+      filtered.score = doc['@search.score'] || 0;
+      return JSON.stringify(filtered);
     });
   } catch (error) {
     console.error('Error retrieving context from Azure Search:', error);
