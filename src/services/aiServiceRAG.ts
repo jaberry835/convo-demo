@@ -70,6 +70,7 @@ export async function retrieveContext(query: string, topK: number = 5): Promise<
     return [];
   }
 }
+
 export async function getSellerResponse(
   buyer: string,
   product: string,
