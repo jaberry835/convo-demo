@@ -31,31 +31,43 @@ const openaiClient = new OpenAI({
 /**
  * Perform a search on the Azure Cognitive Search index to retrieve relevant context.
  */
-async function retrieveContext(query: string, topK: number = 5): Promise<string[]> {
+export async function retrieveContext(query: string, topK: number = 5): Promise<string[]> {
+  // Use Azure Cognitive Search REST API to POST a search query
+  const url = `${searchEndpoint.replace(/\/+$/, '')}/indexes/${encodeURIComponent(searchIndexName)}/docs/search?api-version=2024-07-01`;
+  // Prevent empty search expressions, use '*' to match all if query is blank
+  const searchText = query.trim() === '' ? '*' : query;
+  const payload = {
+    search: searchText,
+    top: topK,
+    select: ['content', 'message', 'role', 'negotiation_stage']
+  };
+  console.debug('retrieveContext - POST', url);
+  console.debug('retrieveContext - payload', JSON.stringify(payload, null, 2));
   try {
-    const results = await searchClient.search(query, {
-      top: topK,
-      select: ['content', 'message', 'role', 'negotiation_stage'], // Adjust based on your index schema
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': searchApiKey
+      },
+      body: JSON.stringify(payload)
     });
-
-    const contexts: string[] = [];
-    for await (const result of results.results) {
-      if (result.document) {
-        // Format the context in a way that's useful for the AI
-        const doc = result.document as Record<string, any>;
-        const contextStr = JSON.stringify({
-          content: doc.content || doc.message || '',
-          role: doc.role || '',
-          stage: doc.negotiation_stage || '',
-          score: result.score
-        });
-        contexts.push(contextStr);
-      }
+    const text = await response.text();
+    if (!response.ok) {
+      console.error('Azure Search error response body:', text);
+      throw new Error(`Search request failed: ${response.status} ${response.statusText}`);
     }
-    return contexts;
+    const data = JSON.parse(text) as { value: Array<Record<string, any>> };
+    // Format each result into a JSON string for AI consumption
+    return data.value.map(doc => JSON.stringify({
+      content: doc.content || doc.message || '',
+      role: doc.role || '',
+      stage: doc.negotiation_stage || '',
+      score: doc['@search.score'] || 0
+    }));
   } catch (error) {
     console.error('Error retrieving context from Azure Search:', error);
-    return []; // Return empty array if search fails
+    return [];
   }
 }
 export async function getSellerResponse(
@@ -225,6 +237,21 @@ ${conversation.map(m => `${m.role}: ${m.message}`).join('\n')}`
     return suggestions;
   } catch (err) {
     console.error('Error generating pattern analysis suggestions:', err);
+    return [];
+  }
+}
+
+/**
+ * Retrieve detailed conversation snippets for a given suggestion content.
+ */
+export async function getSuggestionDetails(
+  query: string,
+  topK: number = 5
+): Promise<string[]> {
+  try {
+    return await retrieveContext(query, topK);
+  } catch (error) {
+    console.error('Error retrieving suggestion details:', error);
     return [];
   }
 }

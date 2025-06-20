@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Suggestion, Message } from '../types/conversation';
-import { getPatternAnalysisSuggestions } from '../services/aiServiceRAG';
+import { getPatternAnalysisSuggestions, retrieveContext } from '../services/aiServiceRAG';
 import SuggestionCard from './SuggestionCard';
 import './CopilotPanel.css';
 
@@ -31,6 +31,13 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
   const [patternSuggestions, setPatternSuggestions] = useState<Suggestion[]>([]);
   const [patternLoading, setPatternLoading] = useState(false);
   const [patternError, setPatternError] = useState<string>('');
+
+  // Detail modal state
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailData, setDetailData] = useState<string[]>([]);
+  const [detailError, setDetailError] = useState('');
+  const [activeSuggestion, setActiveSuggestion] = useState<Suggestion | null>(null);
 
   // Detect crypto amounts and estimate USD
   const conversion = useMemo(() => {
@@ -64,6 +71,29 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
       .finally(() => setPatternLoading(false));
   };
 
+  // Handle fetching and showing more details for a suggestion
+  const handleGetDetails = async (suggestion: Suggestion) => {
+    setActiveSuggestion(suggestion);
+    setDetailError('');
+    setDetailLoading(true);
+    setDetailData([]);
+    setDetailModalOpen(true);
+    try {
+      // Retrieve raw conversation snippets based on suggestion content
+      const snippets = await retrieveContext(`${suggestion.title}. ${suggestion.content}`);
+      if (snippets.length > 0) {
+        setDetailData(snippets);
+      } else {
+        setDetailError('No similar conversation snippets found for this suggestion.');
+      }
+    } catch (err: any) {
+      console.error('Error loading details:', err);
+      setDetailError(err?.message || 'Error loading details.');
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
   return (
     <div className="copilot-panel">
       <div className="copilot-header">
@@ -77,9 +107,26 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
         </button>
       </div>
 
-      {patternError && (
-        <div className="pattern-error">
-          {patternError}
+      {detailModalOpen && (
+        <div className="details-modal-overlay">
+          <div className="details-modal">
+            <button className="modal-close" onClick={() => setDetailModalOpen(false)}>✖</button>
+            <h3>Details from similar conversations</h3>
+                {detailLoading && <p>Loading details...</p>}
+                {detailError && <p className="error-msg">{detailError}</p>}
+                {!detailLoading && !detailError && (
+                  detailData.length > 0 ? (
+                    <ul className="details-list">
+                      {detailData.map((ctx, idx) => (
+                        <li key={idx}><pre>{ctx}</pre></li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p>No similar conversation snippets found for this suggestion.</p>
+                  )
+                )}
+              
+          </div>
         </div>
       )}
 
@@ -132,7 +179,7 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
             {patternLoading ? (
                <div className="loading-placeholder">
                  <div className="loading-spinner"></div>
-                <p>Generating pattern analysis via RAG + OpenAI...</p>
+                 <p>Generating pattern analysis via RAG + OpenAI...</p>
                </div>
             ) : (
               patternSuggestions.length > 0 ? (
@@ -143,6 +190,7 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
                     onRefresh={handleRefreshPattern}
                     isRefreshing={patternLoading}
                     onSelectAction={text => setDraftMessage(text)}
+                    onGetDetails={() => handleGetDetails(suggestion)}
                   />
                 ))
               ) : (

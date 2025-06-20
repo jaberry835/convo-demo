@@ -248,3 +248,52 @@
   font-size: 0.9rem;
   text-align: center;
 }
+
+/* Modal overlay for suggestion details */
+.details-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.details-modal {
+  background: white;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80%;
+  overflow-y: auto;
+  border-radius: 8px;
+  padding: 20px;
+  position: relative;
+}
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+.details-list {
+  list-style: none;
+  padding: 0;
+}
+.details-list li {
+  margin-bottom: 16px;
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+}
+.error-msg {
+  color: #dc3545;
+  font-weight: 600;
+}

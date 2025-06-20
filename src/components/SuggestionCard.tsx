@@ -7,9 +7,10 @@ interface SuggestionCardProps {
   onRefresh?: () => void;
   isRefreshing?: boolean;
   onSelectAction?: (text: string) => void; // Callback to prefill input
+  onGetDetails?: () => void; // Callback to fetch and show more details
 }
 
-const SuggestionCard: React.FC<SuggestionCardProps> = ({ suggestion, onRefresh, isRefreshing = false, onSelectAction }) => {
+const SuggestionCard: React.FC<SuggestionCardProps> = ({ suggestion, onRefresh, isRefreshing = false, onSelectAction, onGetDetails }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const getTypeIcon = (type: string) => {
@@ -95,7 +96,10 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({ suggestion, onRefresh, 
             <div className="suggestion-actions">
               <button className="action-btn primary">Apply Suggestion</button>
               <button className="action-btn secondary">Save for Later</button>
-              <button className="action-btn tertiary">Get More Details</button>
+              <button
+                className="action-btn tertiary"
+                onClick={(e) => { e.stopPropagation(); onGetDetails && onGetDetails(); }}
+              >Get More Details</button>
             </div>
           </div>
         </div>
