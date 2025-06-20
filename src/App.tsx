@@ -3,7 +3,7 @@ import { Allotment } from 'allotment';
 import ConversationPanel from './components/ConversationPanel';
 import CopilotPanel from './components/CopilotPanel';
 import { Message } from './types/conversation';
-import { getBuyerInitialMessage, getSellerResponse } from './services/aiServiceRAG';
+import { getBuyerInitialMessage, getSellerResponse, translateText } from './services/aiServiceRAG';
 import 'allotment/dist/style.css';
 import './App.css';
 
@@ -19,11 +19,15 @@ const sellerOptions = [
   'AzureDragon', 'BronzeBear', 'RubyRaven', 'ObsidianOwl',
   'TitaniumTiger', 'CopperCobra'
 ];
+// Language options for seller communication
+const languageOptions = ['English', 'Spanish', 'Russian', 'Chinese'];
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isBotTyping, setIsBotTyping] = useState(false);
-  // Randomize buyer selection on initial load and allow changes via dropdown
+  // Language selection with default English
+  const [selectedLanguage, setSelectedLanguage] = useState(languageOptions[0]);
+  // Randomize buyer selection on initial load and allow changes
   const [selectedBuyer, setSelectedBuyer] = useState(() => {
     const idx = Math.floor(Math.random() * buyerOptions.length);
     return buyerOptions[idx];
@@ -44,12 +48,18 @@ function App() {
     setIsBotTyping(true);
     setStarted(true);
     const initialText = await getBuyerInitialMessage(selectedBuyer, productDesc);
+    // Translate buyer's initial message if needed
+    let displayBuyerMsg = initialText;
+    if (selectedLanguage !== 'English') {
+      const native = await translateText(initialText, selectedLanguage);
+      displayBuyerMsg = `${native}\n\n(English: ${initialText})`;
+    }
     const buyerMsg: Message = {
       turn_order: 1,
       timestamp: new Date().toISOString(),
       role: 'Buyer',
       handle: selectedBuyer,
-      message: initialText,
+      message: displayBuyerMsg,
       negotiation_stage: 'initiation',
       coded_language: false,
       security_flags: { encrypted: false, pgp_key_exchanged: false },
@@ -59,12 +69,18 @@ function App() {
 
     // Include only the buyer's initial message in history
     const reply = await getSellerResponse(selectedSeller, selectedBuyer, productDesc, initialText, [buyerMsg]);
+    // Translate seller's English response to selected language if needed
+    let displayReply = reply;
+    if (selectedLanguage !== 'English') {
+      const native = await translateText(reply, selectedLanguage);
+      displayReply = `${native}\n\n(English: ${reply})`;
+    }
     const sellerMsg: Message = {
       turn_order: 2,
       timestamp: new Date().toISOString(),
       role: 'Seller',
       handle: selectedSeller, // use dynamic seller name
-      message: reply,
+      message: displayReply,
       negotiation_stage: 'specification',
       coded_language: false,
       security_flags: { encrypted: false, pgp_key_exchanged: false },
@@ -82,12 +98,19 @@ function App() {
       : text.match(/\b(payment|wallet|transaction)\b/)  ? 'payment'
       : text.match(/\b(finalize|confirm|complete)\b/)     ? 'finalization'
       : 'specification';
+    // Create and display buyer message
+    // Translate buyer message
+    let displayBuyer = messageText;
+    if (selectedLanguage !== 'English') {
+      const native = await translateText(messageText, selectedLanguage);
+      displayBuyer = `${native}\n\n(English: ${messageText})`;
+    }
     const newMessage: Message = {
       turn_order: messages.length + 1,
       timestamp: new Date().toISOString(),
       role: 'Buyer',
       handle: selectedBuyer,
-      message: messageText,
+      message: displayBuyer,
       negotiation_stage: stage,
       coded_language: false,
       security_flags: { encrypted: true, pgp_key_exchanged: true },
@@ -103,12 +126,18 @@ function App() {
       // Pass full conversation history including the new buyer message
       const history = [...messages, newMessage];
       const botReply = await getSellerResponse(selectedSeller, selectedBuyer, productDesc, messageText, history);
+      // Translate seller's response
+      let sellerDisplay = botReply;
+      if (selectedLanguage !== 'English') {
+        const native = await translateText(botReply, selectedLanguage);
+        sellerDisplay = `${native}\n\n(English: ${botReply})`;
+      }
       const sellerMessage: Message = {
         turn_order: messages.length + 2,
         timestamp: new Date().toISOString(),
         role: 'Seller',
         handle: selectedSeller, // dynamic seller
-        message: botReply,
+        message: sellerDisplay,
         negotiation_stage: stage,
         coded_language: false,
         security_flags: { encrypted: true, pgp_key_exchanged: true },
@@ -148,17 +177,20 @@ function App() {
           </Allotment.Pane>
           <Allotment.Pane minSize={250}>
             <CopilotPanel
-              buyerOptions={buyerOptions}
-              selectedBuyer={selectedBuyer}
-              setSelectedBuyer={setSelectedBuyer}
-              productDesc={productDesc}
-              setProductDesc={setProductDesc}
-              initiateConversation={initiateConversation}
-              started={started}
-              messages={messages}
-              setDraftMessage={setDraftMessage}
-            />
-          </Allotment.Pane>
+                buyerOptions={buyerOptions}
+                selectedBuyer={selectedBuyer}
+                setSelectedBuyer={setSelectedBuyer}
+                languageOptions={languageOptions}
+                selectedLanguage={selectedLanguage}
+                setSelectedLanguage={setSelectedLanguage}
+                productDesc={productDesc}
+                setProductDesc={setProductDesc}
+                initiateConversation={initiateConversation}
+                started={started}
+                messages={messages}
+                setDraftMessage={setDraftMessage}
+               />
+             </Allotment.Pane>
         </Allotment>
       </div>
     </div>

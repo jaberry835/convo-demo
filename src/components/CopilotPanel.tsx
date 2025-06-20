@@ -8,6 +8,9 @@ interface CopilotPanelProps {
   buyerOptions: string[];
   selectedBuyer: string;
   setSelectedBuyer: React.Dispatch<React.SetStateAction<string>>;
+  languageOptions: string[];
+  selectedLanguage: string;
+  setSelectedLanguage: React.Dispatch<React.SetStateAction<string>>;
   productDesc: string;
   setProductDesc: React.Dispatch<React.SetStateAction<string>>;
   initiateConversation: () => Promise<void>;
@@ -20,6 +23,9 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
   buyerOptions,
   selectedBuyer,
   setSelectedBuyer,
+  languageOptions,
+  selectedLanguage,
+  setSelectedLanguage,
   productDesc,
   setProductDesc,
   initiateConversation,
@@ -156,6 +162,13 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
             onChange={e => setSelectedBuyer(e.target.value)}
           >
             {buyerOptions.map(b => <option key={b} value={b}>{b}</option>)}
+          </select>
+          <select
+            aria-label="Select language"
+            value={selectedLanguage}
+            onChange={e => setSelectedLanguage(e.target.value)}
+          >
+            {languageOptions.map(lang => <option key={lang} value={lang}>{lang}</option>)}
           </select>
           <input
             type="text"

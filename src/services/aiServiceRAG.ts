@@ -279,3 +279,31 @@ export async function getSuggestionDetails(
     return [];
   }
 }
+
+/**
+ * Translate given text to the target language using GPT-4o.
+ */
+export async function translateText(
+  text: string,
+  targetLang: string
+): Promise<string> {
+  try {
+    const messages = [
+      { role: 'system' as const,
+        content: `You are a translation assistant. Translate the following text into ${targetLang}, preserving meaning and format. Only output the translated text without additional commentary.`
+      },
+      { role: 'user' as const, content: text }
+    ];
+    // @ts-ignore
+    const result = await openaiClient.chat.completions.create({
+      model: openaiDeployment,
+      messages: messages as any,
+      temperature: 0,
+      max_tokens: 1000,
+    });
+    return result.choices[0].message?.content?.trim() || text;
+  } catch (err) {
+    console.error('Translation error:', err);
+    return text;
+  }
+}
