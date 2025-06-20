@@ -187,8 +187,6 @@ const CopilotPanel: React.FC<CopilotPanelProps> = ({
                   <SuggestionCard
                     key={suggestion.id}
                     suggestion={suggestion}
-                    onRefresh={handleRefreshPattern}
-                    isRefreshing={patternLoading}
                     onSelectAction={text => setDraftMessage(text)}
                     onGetDetails={() => handleGetDetails(suggestion)}
                   />
