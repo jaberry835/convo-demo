@@ -1,10 +1,11 @@
 import * as RAG from './aiServiceRAG';
 import * as RAGAlt from './aiServiceRAG-alt';
 
-// Toggle using environment variable
-const useAlt = process.env.REACT_APP_USE_ALT_RAG === 'true';
+// Toggle using environment variable (ensure to restart after changing .env)
+const useAlt = process.env.REACT_APP_USE_ALT_RAG?.toLowerCase() === 'true';
+console.log('aiServiceRAG: useAlt flag is', useAlt, ' (REACT_APP_USE_ALT_RAG=', process.env.REACT_APP_USE_ALT_RAG, ')');
 
-// Export common functions, switching to alt implementation if flagged
+// Export all services, choosing alt implementation for RAG functions when flagged
 export const retrieveContext = useAlt
   ? RAGAlt.retrieveContext
   : RAG.retrieveContext;
@@ -29,5 +30,7 @@ export const getSuggestionDetails = useAlt
   ? RAGAlt.getSuggestionDetails
   : RAG.getSuggestionDetails;
 
-// Always use primary translation (no alt)
-export const translateText = RAG.translateText;
+// Export translation, allowing alt override
+export const translateText = useAlt
+  ? RAGAlt.translateText
+  : RAG.translateText;
